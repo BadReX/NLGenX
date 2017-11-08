@@ -1,3 +1,7 @@
+"""
+Some useful function to process text.
+"""
+
 from nltk.tokenize import word_tokenize
 from nltk.tag import StanfordNERTagger
 
@@ -8,20 +12,17 @@ NERTagger = StanfordNERTagger(
     DIR + 'StanfordNLP/stanford-ner/stanford-ner.jar',
     encoding='utf-8')
 
-
 TAGS = {'LOCATION', 'ORGANIZATION', 'DATE', \
             'MONEY', 'PERSON', 'PERCENT', 'TIME'}
 
 def extract_named_entities(text):
     """
-    Given a sentence (string), return indices of the named entities (list).
+    Given a sentence (string), return named entities and their positions (list).
     """
     # tokenize
     tokenized_text = word_tokenize(text)
-
     # NER tagging
     tagged_text = NERTagger.tag(tokenized_text)
-
     # entities
     named_entities = []
 
@@ -40,20 +41,30 @@ def extract_named_entities(text):
         previous_tag = tag
 
     # get indicies of names entities in the text
-    for entity in named_entities:
-        pass
+    entity_position_list = []
 
-    return named_entities
+    for entity in named_entities:
+        start_idx = text.find(entity)
+        end_idx = start_idx + len(entity)
+        entity_position_list.append((entity, (start_idx, end_idx)))
+
+    return entity_position_list
 
 
 def main():
-    text = """While in France, Christine Lagarde Johnson discussed short-term
-            stimulus efforts in a recent interview with the Wall
-            Street Journal on August 1st 2017."""
+    """Test extract_named_entities function."""
+
+    text = """While in France, Christine Lagarde Johnson's team discussed
+            short-term stimulus efforts in a recent interview with the Wall
+            Street Journal on August 1st 2017. The United Nations decided to
+            apply harmless nuclear regulations on Iran.
+            The United States of America has many great cities such as
+            New York, Las Vegas, and San Francisco."""
 
     E = extract_named_entities(text)
 
-    print(E)
+    for (e, i) in E:
+        print(e, i[0], i[1]) # text[i[0]: i[1]]
 
 if __name__ == '__main__':
     main()

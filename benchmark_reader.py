@@ -12,24 +12,17 @@ class Triple:
 
 class Tripleset:
 
-    def __init__(self, xml_triples):
-        """
-        BADR: This class was modified to account for some design
-        changes!
-        """
-
+    def __init__(self):
         self.triples = []
-        self.fill_tripleset(xml_triples)
 
-    def fill_tripleset(self, xml_triples):
-        """Return a list of triples of type (Triple). """
-        for _triple in xml_triples:
-            s, p, o = _triple.split(' | ')
+    def fill_tripleset(self, t):
+        for xml_triple in t:
+            s, p, o = xml_triple.text.split(' | ')
 
             # inistiate a triple
             triple = Triple(s, p, o)
             self.triples.append(triple)
-
+            
 
 class Lexicalisation:
 

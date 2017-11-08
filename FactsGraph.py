@@ -1,14 +1,16 @@
-#!/usr/bin/env python
 """
-Basic script to create an empty python package containing one module
+A module for FactsGraph! It is fun ;-)
 """
-from benchmark_reader import *
-from nltk.chunk import conlltags2tree
+
+from benchmark_reader import Tripleset
+from text_utils import *
+import xml.etree.ElementTree as et
+
 
 class FactsGraph():
     """
-    A class to represent instances of RDF to Text instances for natural
-    language generation from structed data input (e.g. KB RDF triples).
+    A class to represent RDF to Text instances for natural language generation
+    from structed input (e.g. knowledge base RDF triples).
     NOTE: Training instances are represented as (graph, text) pairs, while eval
     and test instances are represented only as graphs.
     """
@@ -30,22 +32,28 @@ class FactsGraph():
         if sentence:
             self.sentence = sentence
 
-        # a set of entities in the graph instance
-        self.entities = set()
+        # a dict for entities in the graph instance entity --> id
+        self.entity2id = {}
 
         # a set of properties in the graph instance
         self.properties = set()
 
-        # a dict to link entities in the graph instance (subj --> (prop, obj))
-        self.entityGraph = {}
-
         # call contruct_graph() method to build the graph from the RDF triples
-        self._contruct_graph()
+        # a dict to link entities in the graph instance (subj --> (prop, obj))
+        self.entityGraph = self._contruct_graph()
+
+        # find semantic type for each entity in the graph
+        # a dict to map between entites and their semantic types
+        #self.entity2type = self._get_semantic_types()
+
 
     def _contruct_graph(self):
         """
-        Build the graph.
+        Build the graph. Populate entity2id, properties and entityGraph dicts.
         """
+        eGraph = {}
+        entityID = 0
+
         # loop through each triple
         for triple in self.rdf_triples:
             # extract nodes (entities) and edges (properties)
@@ -53,43 +61,96 @@ class FactsGraph():
             obj = triple.object
             prop = triple.property
 
-            # update dicts
-            self.entities.update((subj, obj))
+            # update entities dict
+            if subj not in self.entity2id:
+                entityID += 1
+                self.entity2id[subj] = entityID
+
+            if obj not in self.entity2id:
+                entityID += 1
+                self.entity2id[obj] = entityID
+
+            # add to properties
             self.properties.add(prop)
 
             # initialize the entityGraph dict with (prop, obj) tuples
-            if subj not in self.entityGraph.keys():
-                self.entityGraph[subj] = [(prop, obj)]
+            if subj not in eGraph:
+                eGraph[subj] = [(prop, obj)]
             else: # if subj entity already seen in the graph
-                self.entityGraph[subj].append((prop, obj))
+                eGraph[subj].append((prop, obj))
+
+        return eGraph
 
 
-st = StanfordNERTagger(
-    '/home/badr/StanfordNLP/stanford-ner/classifiers/english.all.3class.distsim.crf.ser.gz',
-    '/home/badr/StanfordNLP/stanford-ner/stanford-ner.jar',
-    encoding='utf-8')
+    def _get_semantic_types(use_schema=False):
+        """
+        For each entity (node) in the graph, find the semantic type.
+        """
+        raise NotImplementedError("To be implemented.")
+
+
+    def delexicalize_sentence(self):
+        """
+        Apply delexicalization on sentence.
+        """
+        raise NotImplementedError("To be implemented.")
+
+
+    def linearize_graph(self, structured=False):
+        """
+        Linearize the triple set.
+        """
+        linear_seq = ''
+
+        for triple in self.rdf_triples:
+            # extract nodes (entities) and edges (properties)
+            subj = triple.subject
+            obj = triple.object
+            prop = triple.property
+
+            linear_seq = ' '.join(
+                                    [
+                                        linear_seq,
+                                        'ENTITY-' + str(self.entity2id[subj]),
+                                        subj,
+                                        prop,
+                                        'ENTITY-' + str(self.entity2id[obj]),
+                                        obj
+                                    ]
+                                )
+
+        return linear_seq.lstrip()
+
 
 def test():
-    triple_set = (
-        "Donald Trump | birthPlace | USA",
-        "USA | leaderName | Donald Trump",
-        "USA | capital | Washington DC",
-        "Donald Trump | spouse | Melania Knauss",
-        "Melania Knauss | nationality | Slovenia",
-        "Melania Knauss | nationality | USA"
-        )
+    xml_str = """<triples>
+                    <otriple>Donald Trump | birthPlace | USA</otriple>
+                    <otriple>USA | leaderName | Donald Trump</otriple>
+                    <otriple>USA | capital | Washington DC</otriple>
+                    <otriple>Donald Trump | spouse | Melania Knauss</otriple>
+                    <otriple>Melania Knauss | nationality | Slovenia</otriple>
+                    <otriple>Melania Knauss | nationality | USA</otriple>
+                </triples>"""
 
-    s = "Trump was born in the united states of Amercia, \
-            which captial is Washington DC."
 
-    t = Tripleset(triple_set)
+    triple_set = et.fromstring(xml_str)
+
+    s = """Donald Trump was born in the United States of Amercia,
+        the country whrere he later became the president. The captial of the US
+        is Washington DC. Donald Trump's wife, Melania Knauss, has two
+        nationalities; American and Slovenian."""
+
+    t = Tripleset()
+    t.fill_tripleset(triple_set)
+
     test_case = FactsGraph(t, s)
 
     print('Properties: ', test_case.properties)
-    print('Entities: ', test_case.entities)
+    print('Entities: ', test_case.entity2id)
     print('Graph: ', test_case.entityGraph)
+    print('Linearization: ', test_case.linearize_graph())
 
-    assert test_case.entities == \
+    assert test_case.entity2id.keys() == \
         {'Donald Trump', 'USA', 'Washington DC', 'Melania Knauss', \
             'Slovenia', 'USA'}, \
         "Test case failed! Entities do not match."
@@ -114,20 +175,23 @@ def test():
         }, "Test case failed! entityGraph does not match."
 
     print('Properties: ', test_case.properties)
-    print('Entities: ', test_case.entities)
+    print('Entities: ', test_case.entity2id)
     print('Graph: ', test_case.entityGraph)
+    print('Linearization: ', test_case.linearize_graph())
 
     print('\nTesting SUCCESSFUL!')
 
-    # if sentence is given, extract named entites with NLTK NER
-    if test_case.sentence:
-        self.name_entities = extract_named_entities(test_case.sentence)
-
-
 def main():
-    """Basic command line bootstrap for the BasicModule Skeleton"""
-    #BasicModule.cmd()
     test()
+
+    triple_set = (
+        "Donald Trump | birthPlace | USA",
+        "USA | leaderName | Donald Trump",
+        "USA | capital | Washington DC",
+        "Donald Trump | spouse | Melania Knauss",
+        "Melania Knauss | nationality | Slovenia",
+        "Melania Knauss | nationality | USA"
+        )
 
 
 if __name__ == '__main__':
