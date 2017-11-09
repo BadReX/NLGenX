@@ -122,7 +122,6 @@ def test():
             print(G.linearize_graph(), G.sentence)
 
 
-
 def main():
     test()
 

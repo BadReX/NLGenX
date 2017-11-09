@@ -39,7 +39,9 @@ class FactsGraph():
         self.properties = set()
 
         # call contruct_graph() method to build the graph from the RDF triples
+
         # a dict to link entities in the graph instance (subj --> (prop, obj))
+        # this data structure will facilitate generating structured sequences
         self.entityGraph = self._contruct_graph()
 
         # find semantic type for each entity in the graph
@@ -73,11 +75,28 @@ class FactsGraph():
             # add to properties
             self.properties.add(prop)
 
-            # initialize the entityGraph dict with (prop, obj) tuples
+            # populate the entityGraph dict with (prop, obj) tuples
+            # flag var to check if the property already added to a node
+            FOUND = False
+
             if subj not in eGraph:
-                eGraph[subj] = [(prop, obj)]
-            else: # if subj entity already seen in the graph
-                eGraph[subj].append((prop, obj))
+                eGraph[subj] = [(prop, [obj])]
+             # if subj entity already seen in the graph
+            else:
+                # we need to do something smart now
+                # loop through all already added (prob, [obj]) tuples
+                for i, (p, o) in enumerate(eGraph[subj]):
+                    # if the prop already exists, append to the list of object
+                    if p == prop:
+                        FOUND = True
+                        eGraph[subj][i][1].append(obj)
+                        break
+                    # else, try the next (prob, [obj]) tuple
+                    else:
+                        continue
+                # if the search failed, add a new (prop, [obj]) tuple
+                if not FOUND:
+                    eGraph[subj].append((prop, [obj]))
 
         return eGraph
 
@@ -100,26 +119,53 @@ class FactsGraph():
         """
         Linearize the triple set.
         """
-        linear_seq = ''
 
-        for triple in self.rdf_triples:
-            # extract nodes (entities) and edges (properties)
-            subj = triple.subject
-            obj = triple.object
-            prop = triple.property
+        if not structured:
+            seq = ''
+            for triple in self.rdf_triples:
+                # extract nodes (entities) and edges (properties)
+                subj = triple.subject
+                obj = triple.object
+                prop = triple.property
 
-            linear_seq = ' '.join(
-                                    [
-                                        linear_seq,
-                                        'ENTITY-' + str(self.entity2id[subj]),
-                                        subj,
-                                        prop,
-                                        'ENTITY-' + str(self.entity2id[obj]),
-                                        obj
-                                    ]
-                                )
+                seq = ' '.join(
+                                [
+                                    seq,
+                                    'ENTITY-' + str(self.entity2id[subj]),
+                                    subj,
+                                    prop,
+                                    'ENTITY-' + str(self.entity2id[obj]),
+                                    obj
+                                ]
+                            )
 
-        return linear_seq.lstrip()
+        else:
+            # if we want to generate structured sequence, work on the entityGrpah
+            seq = '{{'
+
+            for attr, value in self.entityGraph.items():
+                seq = ' '.join([seq, '{'])
+                seq = ' '.join([seq, 'ENTITY-' + str(self.entity2id[attr]), attr])
+
+                for prob, obj_list in value:
+                    seq = ' '.join([seq, '[', prob])
+
+                    for obj in obj_list:
+                        seq = ' '.join(
+                                        [
+                                            seq,
+                                            '(',
+                                            'ENTITY-'+ str(self.entity2id[obj]),
+                                            obj,
+                                            ')'
+                                        ]
+                                        )
+                    seq = ' '.join([seq, ']'])
+                seq = ' '.join([seq,  '}'])
+
+            seq = ' '.join([seq, '}}'])
+
+        return seq.lstrip()
 
 
 def test():
@@ -149,6 +195,7 @@ def test():
     print('Entities: ', test_case.entity2id)
     print('Graph: ', test_case.entityGraph)
     print('Linearization: ', test_case.linearize_graph())
+    print('Strucutred:', test_case.linearize_graph(structured=True))
 
     assert test_case.entity2id.keys() == \
         {'Donald Trump', 'USA', 'Washington DC', 'Melania Knauss', \
@@ -161,16 +208,15 @@ def test():
 
     assert test_case.entityGraph == \
         {'Donald Trump': [ \
-            ('birthPlace', 'USA'),
-            ('spouse', 'Melania Knauss')
+            ('birthPlace', ['USA']),
+            ('spouse', ['Melania Knauss'])
             ],
         'USA': [
-            ('leaderName', 'Donald Trump'),
-            ('capital', 'Washington DC')
+            ('leaderName', ['Donald Trump']),
+            ('capital', ['Washington DC'])
             ],
         'Melania Knauss': [
-            ('nationality', 'Slovenia'),
-            ('nationality', 'USA')
+            ('nationality', ['Slovenia', 'USA'])
             ]
         }, "Test case failed! entityGraph does not match."
 
