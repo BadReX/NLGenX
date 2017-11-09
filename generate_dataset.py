@@ -2,7 +2,7 @@
 A module to process input data and generate dataset for training and inference.
 """
 
-import .utils.IO_utils
+from utils import IO_utils
 import argparse
 from GraphModel import *
 

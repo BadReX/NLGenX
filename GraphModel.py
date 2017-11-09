@@ -2,8 +2,7 @@
 A module for Entity, Property, and EntityGraph! It is fun ;-)
 """
 
-from .util.rdf_utils import Tripleset
-from .util.text_utils import *
+from utils import rdf_utils, text_utils
 import xml.etree.ElementTree as et
 
 
@@ -252,7 +251,7 @@ def test():
         is Washington DC. Donald Trump's wife, Melania Knauss, has two
         nationalities; American and Slovenian."""
 
-    t = Tripleset()
+    t = rdf_utils.Tripleset()
     t.fill_tripleset(triple_set)
 
     test_case = EntityGraph(t, s)

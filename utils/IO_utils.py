@@ -4,10 +4,9 @@ Some useful functions and data structures to read and process XML files.
 
 import xml.etree.ElementTree as et
 from collections import defaultdict
-from .utils.rdf_utils import Entry
+from . import rdf_utils
 import argparse
 import os
-from GraphModel import *
 
 
 class RDFInstance(object):
@@ -59,7 +58,7 @@ def parseXML(xml_file):
         category = xml_entry.attrib['category']
         size = xml_entry.attrib['size']
 
-        entry = Entry(category, size, entry_id)
+        entry = rdf_utils.Entry(category, size, entry_id)
 
         for element in xml_entry:
             if element.tag == 'originaltripleset':
@@ -104,34 +103,3 @@ def generate_instances(dir):
                     instances[entry.size].append(rdfInstance)
 
     return instances
-
-
-def test():
-    # get a directory from user input
-    DISCR = 'Process XML files of RDF to Text Entries.'
-    parser = argparse.ArgumentParser(description=DISCR)
-    parser.add_argument('-path', type=str, help='Path to data.', required=True)
-    parser.add_argument('-src', type=str, help='Path to output file for src.', required=True)
-    parser.add_argument('-tgt', type=str, help='Path to output file for tgt.', required=True)
-
-    args = parser.parse_args()
-
-    instances = generate_instances(args.path)
-
-    for (size, ins) in instances.items():
-        for i in ins:
-            G = EntityGraph(i.modifiedtripleset, i.Lexicalisation.lex)
-
-            with open(args.src, 'a+') as srcFile:
-                srcFile.write(G.linearize_graph() + '\n')
-
-            with open(args.tgt, 'a+') as tgtFile:
-                tgtFile.write(G.sentence  + '\n')
-
-
-
-def main():
-    test()
-
-if __name__ == '__main__':
-    main()
