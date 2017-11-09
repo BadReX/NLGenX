@@ -2,12 +2,15 @@
 A module to process input data and generate dataset for training and inference.
 """
 
-import IO_utils
+import .utils.IO_utils
 import argparse
-import EntityGraph
+from GraphModel import *
 
 def generate():
-    # get a directory from user input
+    """
+    Get a options from user input, then generate dataset.
+    """
+
     DISCR = 'Generate dataset from XML files of RDF to Text Entries.'
     parser = argparse.ArgumentParser(description=DISCR)
     parser.add_argument('-path', type=str, help='Path to data.', required=True)
@@ -25,13 +28,13 @@ def generate():
 
     for (size, ins) in instances.items():
         for i in ins:
-            G = EntityGraph.EntityGraph(i.modifiedtripleset, i.Lexicalisation.lex)
+            G = EntityGraph(i.modifiedtripleset, i.Lexicalisation.lex)
 
             with open(args.src, 'a+') as srcFile:
-                if args.input_mode == 'linear':
-                    srcFile.write(G.linearize_graph() + '\n')
-                else:
+                if args.input_mode == 'structured':
                     srcFile.write(G.linearize_graph(structured=True) + '\n')
+                else:
+                    srcFile.write(G.linearize_graph() + '\n')
 
             with open(args.tgt, 'a+') as tgtFile:
                 tgtFile.write(G.sentence  + '\n')

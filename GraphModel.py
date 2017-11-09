@@ -1,14 +1,14 @@
 """
-A module for EntityGraph! It is fun ;-)
+A module for Entity, Property, and EntityGraph! It is fun ;-)
 """
 
-from benchmark_reader import Tripleset
-from text_utils import *
+from .util.rdf_utils import Tripleset
+from .util.text_utils import *
 import xml.etree.ElementTree as et
 
 
 class Entity:
-    """ A class to represent RDF entity. """
+    """ A class to represent an RDF entity. """
 
     def __init__(self, RDF_entity):
         """
@@ -124,6 +124,7 @@ class EntityGraph():
             # flag var to check if the property already added to a node
             FOUND = False
 
+            # TODO: make FIRST and SECOND blocks more elegant
             # FIRST: populate subj2obj
             if subj not in self.subj2obj:
                 self.subj2obj[subj] = [(prop, [obj])]
@@ -291,16 +292,6 @@ def test():
 
 def main():
     test()
-
-    triple_set = (
-        "Donald Trump | birthPlace | USA",
-        "USA | leaderName | Donald Trump",
-        "USA | capital | Washington DC",
-        "Donald Trump | spouse | Melania Knauss",
-        "Melania Knauss | nationality | Slovenia",
-        "Melania Knauss | nationality | USA"
-        )
-
 
 if __name__ == '__main__':
     main()
