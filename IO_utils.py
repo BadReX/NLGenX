@@ -4,10 +4,10 @@ Some useful functions and data structures to read and process XML files.
 
 import xml.etree.ElementTree as et
 from collections import defaultdict
-from benchmark_reader import *
+from benchmark_reader import Entry
 import argparse
 import os
-from FactsGraph import *
+from EntityGraph import *
 
 
 class RDFInstance(object):
@@ -77,7 +77,7 @@ def parseXML(xml_file):
 def make_instances(dir):
     """
     Traverse through a path, visit all subdirectories, and return a dict of
-    entries organized by size: size --> list of entries
+    entries accessible by size: size --> list of entries
     """
     subfolders = [f.path for f in os.scandir(dir) if f.is_dir() ]
 
@@ -118,7 +118,7 @@ def test():
 
     for (size, ins) in instances.items():
         for i in ins:
-            G = FactsGraph(i.modifiedtripleset, i.Lexicalisation.lex)
+            G = EntityGraph(i.modifiedtripleset, i.Lexicalisation.lex)
             print(G.linearize_graph(), G.sentence)
 
 
