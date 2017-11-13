@@ -1,9 +1,9 @@
-# Generating Text from Knowledge Graphs with Sequence to Sequence Learning
+# Learning to generate text from knowledge graphs with Seq2Seq models
 
-This module is under development. So far, it has been developed
+This project is under development. So far, it has been developed
 and tested with python 3.6.
 
-For now, the code can e used to parse RDF data from XML file,
+For now, the code can be used to parse RDF data from XML files,
 apply some preprocessing, and generate datasets for be used for
 sequence to sequence models.
 
@@ -48,4 +48,4 @@ The target sequences would be the original target sentences (target sentence del
 3. Build offline dictionaries for property schemas, entity aliases, etc.  
 4. Implement delexicalize_sentence() method with text matching.
 5. Develop evaluation module.
-6. Run some experiments with seq2seq model. 
+6. Run some experiments with seq2seq model.
