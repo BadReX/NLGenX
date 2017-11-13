@@ -71,12 +71,12 @@ class Benchmark:
             root = tree.getroot()
             for xml_entry in root.iter('entry'):
                 # ignore triples with no lexicalisations
-                lexfound = False
+                lexpropFound = False
                 for child in xml_entry:
                     if child.tag == "lex":
-                        lexfound = True
+                        lexpropFound = True
                         break
-                if lexfound is False:
+                if lexpropFound is False:
                     continue
 
                 entry_id = xml_entry.attrib['eid']
