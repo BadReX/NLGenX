@@ -1,31 +1,34 @@
 """
 A module for Entity, Property, and EntityGraph! It is fun ;-)
 """
-
-from utils import rdf_utils, text_utils
+#from utils import text_utils
+from utils import rdf_utils
 import xml.etree.ElementTree as et
 
 
-class Entity:
+class EntityClass:
     """ A class to represent an RDF entity. """
 
-    def __init__(self, RDF_entity):
+    def __init__(self, RDF_entity, semantic_type):
         """
         Instantiate an entity.
         :param RDF_entity: an entity from an RDF triple (dtype: string)
         """
         self.lex_form = self.text_split(RDF_entity)
-        self.semantic_type = semantic_type
-        self.aliases = get_alises()
+        self.stype = semantic_type
+        self.aliases = self.get_aliases()
 
-        def text_split(self, RDF_entity):
-            """Return the text of the entity after split."""
-            raise NotImplementedError("To be implemented.")
+    def text_split(self, RDF_entity):
+        """Return the text of the entity after split."""
+        return ' '.join(RDF_entity.split('_'))
 
-        def get_alises(self):
-            """Return a list of aliases for the entity."""
-            return [self.lex_form, self.lex_form.lower()]
+    def get_aliases(self):
+        """Return a list of aliases for the entity."""
+        return [self.lex_form, self.lex_form.lower()]
 
+
+# namedtuple for entity instances
+# IDEA: structure entity as a dict of entity[lex_form] --> entityObject
 
 class Property:
     """ A class to represent RDF property (predicate). """
@@ -38,8 +41,8 @@ class Property:
         self.lex_form = self.text_split(RDF_property)
 
         # TODO: Find a way to get the domain and range from DBpedia
-        self.domain = None
-        self.range = None
+        self.domain = 'AGENT'
+        self.range = 'PATIENT'
 
         def text_split(self, RDF_entity):
             """Return the text of the property after (camelCase) split."""
@@ -85,7 +88,7 @@ class EntityGraph():
         self.subj2obj = {}
         self.obj2subj = {}
 
-        # call method to construct entity graph
+        # call method to construct entity graph and populate other dicts
         self._contruct_graph()
 
         # TODO: maybe move this somewhere else!!!
@@ -121,7 +124,7 @@ class EntityGraph():
             # populate the subj2obj and obj2subj dicst with (prop, [objs]) or
             # (prop, [subjs]) tuples
             # flag var to check if the property already added to a node
-            FOUND = False
+            propFound = False
 
             # TODO: make FIRST and SECOND blocks more elegant
             # FIRST: populate subj2obj
@@ -134,17 +137,17 @@ class EntityGraph():
                 for i, (p, o) in enumerate(self.subj2obj[subj]):
                     # if the prop already exists, append to the list of object
                     if p == prop:
-                        FOUND = True
+                        propFound = True
                         # get the list and append to it
                         self.subj2obj[subj][i][1].append(obj)
                         break
                 # if the search failed, add a new (prop, [obj]) tuple
-                if not FOUND:
+                if not propFound:
                     self.subj2obj[subj].append((prop, [obj]))
 
             # SECOND: populate obj2subj
             # flag var to check if the property already added to a node
-            FOUND = False
+            propFound = False
 
             if obj not in self.obj2subj:
                 self.obj2subj[obj] = [(prop, [subj])]
@@ -155,11 +158,11 @@ class EntityGraph():
                 for i, (p, s) in enumerate(self.obj2subj[obj]):
                     # if the prop already exists, append to the list of object
                     if p == prop:
-                        FOUND = True
+                        propFound = True
                         self.obj2subj[obj][i][1].append(subj)
                         break
                 # if the search failed, add a new (prop, [obj]) tuple
-                if not FOUND:
+                if not propFound:
                     self.obj2subj[obj].append((prop, [subj]))
 
 
@@ -177,9 +180,16 @@ class EntityGraph():
         raise NotImplementedError("To be implemented.")
 
 
+    def get_entityGrpah(self):
+        """
+        Return a dict of entities and thier outgoing edges.
+        """
+        raise NotImplementedError("To be implemented.")
+
     def linearize_graph(self, structured=False, incoming_edges=False):
         """
-        Linearize the triple set.
+        Linearize the graph from triple set (flat sequence)
+        or from the entityGraph (structured sequence).
         """
 
         if not structured:
@@ -194,10 +204,10 @@ class EntityGraph():
                                 [
                                     seq,
                                     'ENTITY-' + str(self.entity2id[subj]),
-                                    subj,
+                                    'AGENT', #subj,
                                     prop,
                                     'ENTITY-' + str(self.entity2id[obj]),
-                                    obj
+                                    'PATIENT', #obj
                                 ]
                             )
         else:
@@ -207,28 +217,28 @@ class EntityGraph():
             else:
                 entityGraph = self.subj2obj
 
-            seq = '('
+            seq = '¹('
 
             for attr, value in entityGraph.items():
-                seq = ' '.join([seq, '('])
-                seq = ' '.join([seq, 'ENTITY-' + str(self.entity2id[attr]), attr])
+                seq = ' '.join([seq, '²('])
+                seq = ' '.join([seq, 'ENTITY-' + str(self.entity2id[attr]), 'AGENT']) # attr
 
                 for prob, obj_list in value:
-                    seq = ' '.join([seq, '(', prob])
+                    seq = ' '.join([seq, '³(', prob])
 
                     for obj in obj_list:
                         seq = ' '.join(
                                         [
                                             seq,
-                                            '(',
+                                            '^(',
                                             'ENTITY-'+ str(self.entity2id[obj]),
-                                            obj,
-                                            ')'
+                                            'PATIENT', #obj,
+                                            ')^'
                                         ]
                                         )
-                    seq = ' '.join([seq, ')'])
-                seq = ' '.join([seq,  ')'])
-            seq = ' '.join([seq, ')'])
+                    seq = ' '.join([seq, ')³'])
+                seq = ' '.join([seq,  ')²'])
+            seq = ' '.join([seq, ')¹'])
 
         return seq.lstrip()
 
@@ -261,8 +271,9 @@ def test():
     print('subj2obj Graph: ', test_case.subj2obj)
     print('obj2subj Graph: ', test_case.obj2subj)
     print('Linearization: ', test_case.linearize_graph())
-    print('Strucutred:', test_case.linearize_graph(structured=True))
-    print('Strucutred:', test_case.linearize_graph(structured=True, incoming_edges=True))
+    print('Strucutred [1]:', test_case.linearize_graph(structured=True))
+    print('Strucutred [2]:', test_case.linearize_graph(structured=True,
+                                                        incoming_edges=True))
 
     assert test_case.entity2id.keys() == \
         {'Donald Trump', 'USA', 'Washington DC', 'Melania Knauss', \
