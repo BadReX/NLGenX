@@ -1,4 +1,13 @@
-To use the modules for generating datasets (either training or dev):
+# Generating Text from Knowledge Graphs with Sequence to Sequence Learning
+
+This module is under development. So far, it has been developed
+and tested with python 3.6.
+
+For now, the code can e used to parse RDF data from XML file,
+apply some preprocessing, and generate datasets for be used for
+sequence to sequence models. 
+
+To use the module for generating datasets (either training or dev):
 
 1. For flat sequence in the source side
 ``` python generate_dataset.py \
@@ -26,11 +35,11 @@ python generate_dataset.py \
 
 Source sequences will be like:
 
-```( ( ENTITY-1 WORK ( author ( ENTITY-2 PERSON ) ) ) )```
+```¹( ²( ENTITY-1 WORK ³( author ^( ENTITY-2 PERSON )^ )³ )² )¹```
 
 NOTE: The module is still under development. For now, the source sequence would be like this example:
 
-```( ( ENTITY-1 AGENT ( author ( ENTITY-2 PATIENT ) ) ) )```
+```¹( ²( ENTITY-1 AGENT ³( author ^( ENTITY-2 PATIENT )^ )³ )² )¹```
 
 The target sequences would be the original target sentences (target sentence delexicalization is still under development).
 
