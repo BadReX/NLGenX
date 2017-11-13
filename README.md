@@ -9,9 +9,11 @@ To use the modules for generating datasets (either training or dev):
 ```
 
 Source sequences will be like:
+
 ```ENTITY-1 WORK ENTITY-2 PERSON```
 
 NOTE: The module is still under development. For now, the source sequence would be like this example:
+
 ```ENTITY-1 AGENT ENTITY-2 PATIENT```
 
 ```
@@ -23,9 +25,11 @@ python generate_dataset.py \
 ```
 
 Source sequences will be like:
+
 ```( ( ENTITY-1 WORK ( author ( ENTITY-2 PERSON ) ) ) )```
 
 NOTE: The module is still under development. For now, the source sequence would be like this example:
+
 ```( ( ENTITY-1 AGENT ( author ( ENTITY-2 PATIENT ) ) ) )```
 
 The target sequences would be the original target sentences (target sentence delexicalization is still under development).
