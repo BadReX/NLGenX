@@ -3,8 +3,8 @@ To use the modules for generating datasets (either training or dev):
 1. For flat sequence in the source side
 ``` python generate_dataset.py \
   -path ../challenge_data_train_dev/train \
-  -input_mode  flat  -src ../datasets/train.src \
->>>>>>> Modify GraphModel.py to account for semantic types
+  -input_mode  flat \
+  -src ../datasets/train.src \
   -tgt ../datasets/train.tgt
 ```
 
